@@ -426,7 +426,7 @@ const SUPABASE_URL = 'https://avwmbsaejofaksfmrpqv.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2d21ic2Flam9mYWtzZm1ycHF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMzE4NTcsImV4cCI6MjEwNzkwNzg1N30.m50X1vDUooFCw7iVGM4AQN2rdMHLySgXVPM79RpPUrA';
 
 const $ = id => document.getElementById(id);
-const AI_URL = '/.netlify/functions/generate-plan';   // Netlify function (see README)
+const AI_URL = '/api/generate-plan';   // Vercel function
 let data = { subjects: [], hours: 3, days: 7, plan: null };
 let user = null, sb = null, lastId = null;
 
@@ -514,7 +514,7 @@ async function makePlan() {
   } catch (e) {
     plan = offlinePlan();
     say(location.protocol === 'file:'
-      ? 'AI only works on your Netlify site, not a double-clicked file. Offline plan used.'
+      ? 'AI only works on your Vercel site, not a double-clicked file. Offline plan used.'
       : 'AI problem: ' + e.message + '. Offline plan used.');
   }
   data.plan = plan; save(); showPlan(); $('genBtn').disabled = false;
@@ -597,7 +597,7 @@ function download() {
 
 // ---------- Ask the AI for plain text or JSON ----------
 async function askAI(prompt, json) {
-  if (location.protocol === 'file:') throw new Error('Open the deployed Netlify website. AI cannot run from a double-clicked HTML file.');
+  if (location.protocol === 'file:') throw new Error('Open the deployed Vercel website. AI cannot run from a double-clicked HTML file.');
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 55000);
   try {
@@ -607,8 +607,8 @@ async function askAI(prompt, json) {
     let j;
     try { j = JSON.parse(raw); } catch {
       throw new Error(r.status === 404 || /<html|<!doctype/i.test(raw)
-        ? 'The AI server function is not deployed. Deploy this entire project through Netlify Git integration or Netlify CLI (including functions). Uploading index.html alone is not enough.'
-        : 'The AI server returned an unreadable response (HTTP ' + r.status + '). Check the Netlify function logs.');
+        ? 'The Vercel AI function is missing. Deploy the api and lib folders with index.html and vercel.json. Set the Vercel Root Directory to the folder containing these files.'
+        : 'The AI server returned an unreadable response (HTTP ' + r.status + '). Check the Vercel function logs.');
     }
     if (!r.ok) throw new Error(j.error || 'AI request failed (HTTP ' + r.status + ').');
     if (typeof j.text !== 'string' || !j.text.trim()) throw new Error('Gemini returned an empty answer. Try again.');
@@ -619,7 +619,7 @@ async function askAI(prompt, json) {
     return clean;
   } catch (e) {
     if (e.name === 'AbortError') throw new Error('The AI request timed out. Try a shorter request.');
-    if (e instanceof TypeError) throw new Error('Cannot reach the AI server. Check your internet connection and deployed Netlify address.');
+    if (e instanceof TypeError) throw new Error('Cannot reach the AI server. Check your internet connection and deployed Vercel address.');
     throw e;
   } finally { clearTimeout(timer); }
 }
